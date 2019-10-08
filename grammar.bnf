@@ -9,60 +9,80 @@
 <PARAM_DECL> ::= <TYPE> <IDENT>
 
 <STATEMENTS> ::= <STMT> | <STATEMENTS> <STMT>
-<STMT> ::= <EXP_STMT> | <RETURN_STMT> | <BREAK_STMT> | <IF_STMT> | <VAR_DECL> | <VAR_ASGN> | <IO_STMT>
+<STMT> ::= <EXP_STMT> | <RETURN_STMT> | <BREAK_STMT> | <IF_STMT> | <VAR_DECL> | <VAR_ASGN> | <IO_STMT> | <WHILE_STMT>
 <RETURN_STMT> ::= "return" ";" | "return" <EXP> ";"
 <BREAK_STMT> ::= "break" ";"
 <CONTINUE_STMT> ::= "continue" ";"
 
 <BLOCK_STMT> ::= "{" <STATEMENTS> "}" | "{" "}"
-<IF_STMT> ::= "if" "(" <EXP> ")" <BLOCK_STMT>
-			| "if" "(" <EXP> ")" <BLOCK_STMT> <ELIF>
-            | "if" "(" <EXP> ")" <BLOCK_STMT> "else" <BLOCK_STMT>
-            |"if" "(" <EXP> ")" <BLOCK_STMT> <ELIF> "else" <BLOCK_STMT>
-<ELIF> ::= "elseif" "(" <EXP> ")" <BLOCK_STMT>|
-            <ELIF>"elseif" "(" <EXP> ")" <BLOCK_STMT>
+<IF_STMT> ::= <IF>
+			| <IF> <ELIF>
+            | <IF> <ELSE>
+            | <IF> <ELIF> <ELSE>
+
+<IF> ::= "if" "(" <EXP> ")" <BLOCK_STMT>
+<ELIF> ::= <EIF> | <ELIF> <EIF>
+<EIF> ::= "elseif" "(" <EXP> ")" <BLOCK_STMT>
+<ELSE> ::= "else" <BLOCK_STMT>
+
 <WHILE_STMT> ::= "while" "(" <EXP> ")" <BLOCK_STMT>
 
 <VAR_DECL> ::= <TYPE> <IDENT> ";"| <TYPE> <VAR_ASGN>
 <VAR_ASGN> ::= <IDENT> "=" <EXP_STMT>
 
-<COMMENT> ::= "//" <STR>
-<ML_COMMENT> ::= "/*" <STRINGS> "*/"
-<STRINGS> ::= <STR> | <STRINGS> <STR>
+<COMMENT> ::= "//" <COMMENT_BODY> <N> | "//" <N>
+<COMMENT_BODY> ::= <COMM> | <COMMENT_BODY> <COMM>
+<COMM> ::= [!-~]
+
+<ML_COMMENT> ::= "/*" <ML_COMMENT_BODY> "*/" | "/*" "*/"
+<ML_COMMENT_BODY> ::= <ML_COMM>| <ML_COMMENT_BODY> <ML_COMM>
+<ML_COMM> ::= <COMMENT_BODY> | <N> 
 
 <IO_STMT> ::= <INPUT> | <OUTPUT>
-<INPUT> ::= "read" "(" <IDENT> ")" ";"
-<OUTPUT> ::= "write" "(" <EXP> ")" ";"
+<INPUT> ::= "read" <R_IDENT>";"
+<OUTPUT> ::= "write" <PAR> ";"
+
+<F_CALL> ::= <IDENT> <PAR>
+
+<R_IDENT> ::= "(" ")" | "(" <IDENT_LIST> ")" 
+<IDENT_LIST> ::= <IDENT> | <IDENT_LIST> "," <IDENT>
+
+<PAR> ::= "(" ")" | "(" <PAR_LIST> ")" 
+<PAR_LIST> ::= <EXP> | <PAR_LIST> "," <EXP>
 
 <EXP_STMT> ::= <EXP> ";"
-<EXP> ::= <NOT>
-<NOT> ::= <LOG> | "!" <LOG> | 
-<LOG> ::= <COMP> | <LOG> "||" <COMP> | <LOG> "&&" <COMP>
+<EXP> ::= <OR>
+<OR> ::= <AND> | <OR> "||" <AND>
+<AND> ::= <EQ> | <AND> "&&" <EQ>
+<EQ> ::= <COMP> | <EQ> "==" <COMP> | <EQ> "!=" <COMP>
 <COMP> ::= <ADD_SUB> | <COMP> <COMP_OP> <ADD_SUB>
 <ADD_SUB> ::= <MULT_DIV> | <ADD_SUB> "+" <MULT_DIV> | <ADD_SUB> "-" <MULT_DIV>
-<MULT_DIV> ::= <POW> | <MULT_DIV> "*" <POW> | <MULT_DIV> "/" <POW>
-<POW> ::= <PRIMARY> | <POW> "^" <PRIMARY>
+<MULT_DIV> ::= <POW> | <MULT_DIV> "*" <POW> | <MULT_DIV> "/" <POW> | <MULT_DIV> "%" <POW>
+<POW> ::= <NOT> | <POW> "^" <NOT>
+<NOT> ::= <PRIMARY> | "!"<PRIMARY>
 
-<PRIMARY> ::= <INT> | <PAREN> | <IDENT> | <BOOL> | <CHAR> | <STR> | <FLOAT> | <FUNCTION>
-<PAREN> ::= "(" <EXP> ")"
+<PRIMARY> ::= <INT> | <PAREN> | <IDENT> | <BOOL> | <CHAR> | <STR> | <FLOAT> | <F_CALL>
+<PAREN> ::= "(" <EXP> ")" | <EXP>
 
-<IDENT> ::= <LETTER> | <IDENT> <LETTER> | <IDENT> <DIGIT> | "_" <IDENT> | <IDENT> "_"
+<IDENT> ::= <BEGIN_SYM> | <IDENT> <AFTER_SYM>
+<BEGIN_SYM> ::= [A-Z] | [a-z] | "_"
+<AFTER_SYM> ::= [A-Z] | [a-z] | "_" | [0-9]
 
 <DIGIT> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 <DIGITS> ::= <DIGIT> | <DIGITS> <DIGIT>
 
 <INT> ::= <DIGITS>
 
-<FLOAT> ::= <DIGITS> | <DIGITS> <FLOAT_REM>
+<FLOAT> ::= <DIGITS> "." | <FLOAT_REM> | <DIGITS> <FLOAT_REM> | <DIGITS> <EXPONENT>
 <FLOAT_REM> ::=  "." <DIGITS> | "." <DIGITS> <EXPONENT>
 <EXPONENT> ::= "e" <DIGITS> | "e-"<DIGITS>
 
 <BOOL> ::= "true" | "false"
-<COMP_OP> ::= ">" | "<" | ">=" | "<=" | "==" | "!=" 
+<COMP_OP> ::= ">" | "<" | ">=" | "<="
 
 <LETTER> ::= <U_LETTER> | L_LETTER
 <CHAR> ::= "'" <LETTER> "'" | "'" <DIGIT> "'" |  "'" <SYM> "'" 
-<CHARACTER> ::= <LETTER> | <DIGIT> |<SYM> | <N>
+<CHARACTER> ::= <LETTER> | <DIGIT> |<SYM> | <SP_SYM>
 <CHARACTERS> ::= <CHARACTER> | <CHARACTERS> <CHARACTER>
 <STR> ::= '"' '"' | '"' <CHARACTERS> '"' 
 
@@ -76,17 +96,34 @@
              "v" | "w" | "x" | "y" | "z" ;
 <SYM> ::= "|" | "!" | "#" | "$" | "%" | "&" | "(" | ")" |
              "*" | "+" | "," | "-" | "." | "/" | ":" | ">" |
-             "=" | "<" | "?" | '@' | "[" | "'\'" | "]" |
-             "^" | "_" | "`" | "{" | "}" | "~"
-<N> ::= "\n"
+             "=" | "<" | "?" | '@' | "[" | "]" | "^" | "_" |
+             "`" | "{" | "}" | "~" 
+
+<N> ::= <ESC_SYM> <ESC_N>
+<ESC_N> ::= "n"
+
+<ESC_CHAR> ::= "b" | "e" | "r" | "t" | "\"" | "\'" | "\\" | "0"
+<ESC_SYM> ::= "\\"
+<SP_SYM> ::= <N> | <ESC_SYM> <ESC_CHAR>
 
 int main (int c)
 {
     int a = 0;
     int b;
 
+    /*
+    very
+    important
+    comment
+    \0\t\n*/
+
+    //one line comment foo()
+
+    float fl = 3.5;
+
     string s = "wasd";
-    read (b);
+    read (b, a);
+
     while (true)
     {
         if(b > a){
@@ -97,9 +134,14 @@ int main (int c)
         }
         else{
             a = a - 3 * b;
+            foo();
             return;
         }
     }
-    write(b-1);
     return(b);
+}
+void foo(int _i2)
+{
+    bool x = false;
+    write(!x, _i2);
 }
