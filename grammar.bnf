@@ -30,13 +30,13 @@
 <VAR_DECL> ::= <TYPE> <IDENT> ";"| <TYPE> <VAR_ASGN>
 <VAR_ASGN> ::= <IDENT> "=" <EXP_STMT>
 
-<COMMENT> ::= "//" <COMMENT_BODY> <N> | "//" <N>
+<COMMENT> ::= "//" <COMMENT_BODY> "\n" | "//" "\n"
 <COMMENT_BODY> ::= <COMM> | <COMMENT_BODY> <COMM>
 <COMM> ::= [!-~]
 
 <ML_COMMENT> ::= "/*" <ML_COMMENT_BODY> "*/" | "/*" "*/"
 <ML_COMMENT_BODY> ::= <ML_COMM>| <ML_COMMENT_BODY> <ML_COMM>
-<ML_COMM> ::= <COMMENT_BODY> | <N> 
+<ML_COMM> ::= <COMMENT_BODY> | "\n"
 
 <IO_STMT> ::= <INPUT> | <OUTPUT>
 <INPUT> ::= "read" <R_IDENT>";"
@@ -59,10 +59,10 @@
 <ADD_SUB> ::= <MULT_DIV> | <ADD_SUB> "+" <MULT_DIV> | <ADD_SUB> "-" <MULT_DIV>
 <MULT_DIV> ::= <POW> | <MULT_DIV> "*" <POW> | <MULT_DIV> "/" <POW> | <MULT_DIV> "%" <POW>
 <POW> ::= <NOT> | <POW> "^" <NOT>
-<NOT> ::= <PRIMARY> | "!"<PRIMARY>
+<NOT> ::= <PRIMARY> | "!"<NOT>
 
 <PRIMARY> ::= <INT> | <PAREN> | <IDENT> | <BOOL> | <CHAR> | <STR> | <FLOAT> | <F_CALL>
-<PAREN> ::= "(" <EXP> ")" | <EXP>
+<PAREN> ::= "(" <EXP> ")"
 
 <IDENT> ::= <BEGIN_SYM> | <IDENT> <AFTER_SYM>
 <BEGIN_SYM> ::= [A-Z] | [a-z] | "_"
@@ -99,12 +99,11 @@
              "=" | "<" | "?" | '@' | "[" | "]" | "^" | "_" |
              "`" | "{" | "}" | "~" 
 
-<N> ::= <ESC_SYM> <ESC_N>
-<ESC_N> ::= "n"
 
-<ESC_CHAR> ::= "b" | "e" | "r" | "t" | "\"" | "\'" | "\\" | "0"
+
+<ESC_CHAR> ::= "n" | "b" | "e" | "r" | "t" | "\"" | "\'" | "\\" | "0"
 <ESC_SYM> ::= "\\"
-<SP_SYM> ::= <N> | <ESC_SYM> <ESC_CHAR>
+<SP_SYM> ::= <ESC_SYM> <ESC_CHAR>
 
 int main (int c)
 {
