@@ -80,7 +80,7 @@
 <BOOL> ::= "true" | "false"
 <COMP_OP> ::= ">" | "<" | ">=" | "<="
 
-<LETTER> ::= <U_LETTER> | L_LETTER
+<LETTER> ::= <U_LETTER> | <L_LETTER>
 <CHAR> ::= "'" <LETTER> "'" | "'" <DIGIT> "'" |  "'" <SYM> "'" 
 <CHARACTER> ::= <LETTER> | <DIGIT> |<SYM> | <SP_SYM>
 <CHARACTERS> ::= <CHARACTER> | <CHARACTERS> <CHARACTER>
