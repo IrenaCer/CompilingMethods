@@ -43,6 +43,11 @@ digraph finite_state_machine {
     
     INT;
     FLOAT;
+
+    IDENT;
+
+    KW_IF;
+    KW_INT;
     
     node [shape = circle];
     qi -> START;
@@ -153,13 +158,44 @@ digraph finite_state_machine {
     _REMAINDER -> _EXPONENT [label = "e"];
     _REMAINDER -> ERROR [label = "*"];
 
-    START -> _IDENT [label = "a-z"];
-    START -> _IDENT [label = "A_Z"];
-    START -> _IDENT [label = "_"];
-    _IDENT -> _IDENT [label = "a-z"];
-    _IDENT -> _IDENT [label = "A_Z"];
-    _IDENT -> _IDENT [label = "0-9"];
-    _IDENT -> _IDENT [label = "_"];
-    _IDENT -> _KEYWORD [label = "*"];
+    //START -> _IDENT [label = "a-z"];
+    //START -> _IDENT [label = "A-Z"];
+    //START -> _IDENT [label = "_"];
+    //_IDENT -> _IDENT [label = "a-z"];
+    //_IDENT -> _IDENT [label = "A-Z"];
+    //_IDENT -> _IDENT [label = "0-9"];
+    //_IDENT -> _IDENT [label = "_"];
+    //_IDENT -> _KEYWORD [label = "*"];
+
+    START -> _IDENT [label = "a-h"];
+    START -> _IDENT [label = "j-z"];
+    START -> _IDENT [label = "A-Z"];
+    _IDENT -> IDENT [label = "*"];
+    START -> _I [label = "i"];
+        _I -> _IF [label = "f"];
+            _IF -> _IDENT [label = "a-z"];
+            _IF -> _IDENT [label = "A-Z"];
+            _IF -> _IDENT [label = "0-9"];
+            _IF -> _IDENT [label = "_"];
+            _IF -> KW_IF [label = "*"];
+        _I -> _IN [label = "n"];
+            _IN -> _INT [label = "t"];
+            _IN -> _IDENT [label = "a-z"];
+            _IN -> _IDENT [label = "A-Z"];
+            _IN -> _IDENT [label = "0-9"];
+            _IN -> _IDENT [label = "_"]; 
+            _IN -> IDENT [label = "*"];
+                _INT -> _IDENT [label = "a-z"];
+                _INT -> _IDENT [label = "A-Z"];
+                _INT -> _IDENT [label = "0-9"];
+                _INT -> _IDENT [label = "_"];   
+                _INT -> KW_INT [label = "*"]
+        _I -> _IDENT [label = "a-z"];
+        _I -> _IDENT [label = "A-Z"];
+        _I -> _IDENT [label = "0-9"];
+        _I -> _IDENT [label = "_"];
+        _I -> IDENT [label = "*"];
+
+
 
 }
