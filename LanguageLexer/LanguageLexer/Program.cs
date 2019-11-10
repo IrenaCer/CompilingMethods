@@ -26,7 +26,7 @@ namespace LanguageLexer
 
                 //Console.WriteLine(input);
 
-                Lexer lexer = new Lexer(input);
+                Lexer lexer = new Lexer(input, path);
                 lexer.lex();
 
                 return 0;

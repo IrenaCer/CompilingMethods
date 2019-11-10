@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace LanguageLexer
 {
@@ -10,26 +11,75 @@ namespace LanguageLexer
         int offset = 0;
         States state;
         char current;
-        int id = 0;
         bool err = false;
+        int lineno = 0;
+        string fileName;
 
-        public Lexer(string input)
+        List<Token> tokens = new List<Token>();
+
+        public Lexer(string input, string fileName)
         {
             this.input = input;
+            this.fileName = fileName;
         }
 
         public void lex()
         {
-            while (!err && offset < input.Length)
+            while (state != States.ERROR && offset < input.Length)
             {
-
+                //Console.WriteLine("Im here");
                 current = input[offset];
 
-                Console.WriteLine("{0}, {1}", current, state);
+                //Console.WriteLine("{0}, {1}", current, state);
 
                 analyse();
                 offset++;
             }
+            current = ' ';
+            //Console.WriteLine("Last analysing");
+            analyse();
+            analyse();
+            //Console.WriteLine(Char.IsLetter(' '));
+
+            //Console.WriteLine("current:");
+            //Console.WriteLine(current);
+            //current = ' ';
+            //Console.WriteLine(state);
+            if (!err)
+            {
+                if (state == States.START || state == States.COMM)
+                {
+                    line++;
+                    completeToken(TokenType.EOF);
+
+                    Console.WriteLine(" ID  | LINE |    TYPE    |   VALUE");
+                    Console.WriteLine("-----+------+------------+-----------");
+
+                    int counter = 0;
+                    foreach (var item in tokens)
+                    {
+                        Console.WriteLine("{0,4} | {1,4} | {2,10} | {3,10}", counter, item.Line, item.Type, item.Value);
+                        counter++;
+                    }
+                }
+                else if (state == States._STRING)
+                {
+                    error("Unterminated string", true);
+                    
+                }
+                else if (state == States.ML_COMM)
+                {
+                    error("Unterminated multiline comment", true);
+                }
+            }
+
+
+
+            //if (state == States.START)
+            //{
+            //    state = States.EOF;
+            //    print();
+            //}
         }
 
         public void analyse()
@@ -37,7 +87,7 @@ namespace LanguageLexer
             switch (state)
             {
                 case States.START:
-                    lexChar();
+                    lexStart();
                     break;
                 case States._NOT:
                     notHandle();
@@ -75,22 +125,38 @@ namespace LanguageLexer
                 case States._ESC_CH:
                     escChHandle();
                     break;
-                case States._CH_VAL:
-                    chValHandle();
-                    break;
                 case States._CH_END:
                     chEndHandle();
                     break;
-                default:
+                case States._STRING:
+                    stringHandle();
                     break;
-            }
-        }
-        public void lexChar()
-        {
-            switch (state)
-            {
-                case States.START:
-                    lexStart();
+                case States._ESC_STR:
+                    escStrHandle();
+                    break;
+                case States._NUM:
+                    numHandle();
+                    break;
+                case States.FLOAT:
+                    floatHandle();
+                    break;
+                case States._EXPONENT:
+                    exponentHandle();
+                    break;
+                case States._NEG_EXPONENT:
+                    negExponentHandle();
+                    break;
+                case States._EXP_END:
+                    exponentEndHandle();
+                    break;
+                case States._REMAINDER:
+                    remainderHandle();
+                    break;
+                case States._IDENT:
+                    identHandle();
+                    break;
+                case States._KEYWORD:
+                    keywordHandle();
                     break;
                 default:
                     break;
@@ -102,63 +168,48 @@ namespace LanguageLexer
             switch (current)
             {
                 case '+':
-                    state = States.PLUS;
-                    print();
-                    id++;
+                    //completeToken(TokenType.PLUS);
+                    tokens.Add(new Token(TokenType.PLUS, "", line));
                     state = States.START;
                     break;
                 case '-':
-                    state = States.MINUS;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.MINUS, "", line));
                     state = States.START;
                     break;
                 case '*':
-                    state = States.MULT;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.MULT, "", line));
                     state = States.START;
                     break;
                 case '%':
-                    state = States.REM;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.REM, "", line));
                     state = States.START;
                     break;
                 case '^':
-                    state = States.POW;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.POW, "", line));
                     state = States.START;
                     break;
                 case '(':
-                    state = States.PAREN_O;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.PAREN_O, "", line));
                     state = States.START;
                     break;
                 case ')':
-                    state = States.PAREN_C;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.PAREN_C, "", line));
                     state = States.START;
                     break;
                 case '{':
-                    state = States.BRACE_O;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.BRACE_O, "", line));
                     state = States.START;
                     break;
                 case '}':
-                    state = States.BRACE_C;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.BRACE_C, "", line));
                     state = States.START;
                     break;
                 case ';':
-                    state = States.SEMI_CLN;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.SEMI_CLN, "", line));
+                    state = States.START;
+                    break;
+                case ',':
+                    tokens.Add(new Token(TokenType.CLN, "", line));
                     state = States.START;
                     break;
                 case '!':
@@ -185,9 +236,25 @@ namespace LanguageLexer
                 case '\'':
                     state = States._CHAR;
                     break;
+                case '\"':
+                    state = States._STRING;
+                    break;
                 case '\n':
                     line++;
                     state = States.START;
+                    break;
+                case char num when Char.IsDigit(num) == true:
+                    state = States._NUM;
+                    buffer += current;
+                    break;
+                case '.':
+                    state = States._REMAINDER;
+                    buffer += current;
+                    break;
+
+                case char ch when Char.IsLetter(ch) == true || ch == '_':
+                    state = States._IDENT;
+                    buffer += current;
                     break;
                 default:
                     state = States.START;
@@ -201,15 +268,11 @@ namespace LanguageLexer
             switch (current)
             {
                 case '=':
-                    state = States.NOT_EQ;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.NOT_EQ, "", line));
                     state = States.START;
                     break;
                 default:
-                    state = States.NOT;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.NOT, "", line));
                     offset--;
                     state = States.START;
                     break;
@@ -221,15 +284,11 @@ namespace LanguageLexer
             switch (current)
             {
                 case '=':
-                    state = States.EQ_COMP;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.EQ_COMP, "", line));
                     state = States.START;
                     break;
                 default:
-                    state = States.EQ_ASGN;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.EQ_ASGN, "", line));
                     offset--;
                     state = States.START;
                     break;
@@ -241,15 +300,11 @@ namespace LanguageLexer
             switch (current)
             {
                 case '=':
-                    state = States.L_EQ;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.L_EQ, "", line));
                     state = States.START;
                     break;
                 default:
-                    state = States.L;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.L, "", line));
                     offset--;
                     state = States.START;
                     break;
@@ -261,15 +316,11 @@ namespace LanguageLexer
             switch (current)
             {
                 case '=':
-                    state = States.G_EQ;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.G_EQ, "", line));
                     state = States.START;
                     break;
                 default:
-                    state = States.G;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.G, "", line));
                     offset--;
                     state = States.START;
                     break;
@@ -280,13 +331,11 @@ namespace LanguageLexer
             switch (current)
             {
                 case '&':
-                    state = States.AND;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.AND, "", line));
                     state = States.START;
                     break;
                 default:
-                    error();
+                    error("Incomplete && operator"); //prints 2-3 times
                     break;
             }
         }
@@ -295,13 +344,11 @@ namespace LanguageLexer
             switch (current)
             {
                 case '|':
-                    state = States.OR;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.OR, "", line));
                     state = States.START;
                     break;
                 default:
-                    error();
+                    error("Incomplete || operator"); //prints 2-3
                     break;
             }
         }
@@ -314,12 +361,11 @@ namespace LanguageLexer
                     state = States.COMM;
                     break;
                 case '*':
+                    lineno = line;
                     state = States.ML_COMM;
                     break;
                 default:
-                    state = States.DIV;
-                    print();
-                    id++;
+                    tokens.Add(new Token(TokenType.DIV, "", line));
                     offset--;
                     state = States.START;
                     break;
@@ -331,8 +377,7 @@ namespace LanguageLexer
             switch (current)
             {
                 case '\n':
-                    print();
-                    id++;
+                    line++;
                     state = States.START;
                     break;
                 default:
@@ -360,12 +405,12 @@ namespace LanguageLexer
             {
                 case '/':
                     state = States.ML_COMM;
-                    print();
-                    id++;
+                    lineno = 0;
                     state = States.START;
                     break;
                 default:
                     state = States.ML_COMM;
+                    offset--;
                     break;
             }
         }
@@ -378,8 +423,18 @@ namespace LanguageLexer
                     state = States._ESC_CH;
                     buffer += current;
                     break;
+
+                case '\'':
+                case '\"':
+                case '\n':
+                case '\b':
+                case '\r':
+                case '\t':
+                    error();
+                    break;
+
                 default:
-                    state = States._CH_VAL;
+                    state = States._CH_END;
                     buffer += current;
                     break;
             }
@@ -428,73 +483,384 @@ namespace LanguageLexer
             }
         }
 
-        public void chValHandle()
+        public void chEndHandle()
         {
             switch (current)
             {
                 case '\'':
-                    error();
-                    break;
-                case '\"':
-                    error();
-                    break;
-                case '\n':
-                    error();
-                    break;
-                case '\b':
-                    error();
-                    break;
-                case '\r':
-                    error();
-                    break;
-                case '\t':
-                    error();
+                    tokens.Add(new Token(TokenType.CHAR, buffer, line));
+                    buffer = "";
+                    state = States.START;
                     break;
                 default:
-                    state = States._CH_END;
+                    error("Length of char can only be one character use \" \" for string");
+                    break;
+            }
+        }
+
+        public void stringHandle()
+        {
+            if (lineno == 0)
+            {
+                lineno = line;
+            }
+            switch (current)
+            {
+                case '\"':
+                    tokens.Add(new Token(TokenType.STRING, buffer, lineno));
+                    buffer = "";
+                    lineno = 0;
+                    state = States.START;
+                    break;
+                case '\\':
+                    state = States._ESC_STR;
+                    //buffer += current;
+                    break;
+                case '\n':
+                    line++;
+                    buffer += current;
+                    break;
+                default:
                     buffer += current;
                     break;
             }
         }
 
-        public void chEndHandle()
+        public void escStrHandle()
         {
             switch (current)
             {
-                case '\'' :
-                    state = States.CHAR;
-                    print();
-                    id++;
-                    buffer = "";
-                    state = States.START;
+                case 'n':
+                    state = States._STRING;
+                    buffer += '\n';
+                    break;
+                case 'b':
+                    state = States._STRING;
+                    buffer += '\b';
+                    break;
+                case 'r':
+                    state = States._STRING;
+                    buffer += '\r';
+                    break;
+                case 't':
+                    state = States._STRING;
+                    buffer += '\t';
+                    break;
+                case '"':
+                    state = States._STRING;
+                    buffer += '\"';
+                    break;
+                case '\'':
+                    state = States._STRING;
+                    buffer += '\'';
+                    break;
+                case '\\':
+                    state = States._STRING;
+                    buffer += '\\';
+                    break;
+                case '0':
+                    state = States._STRING;
+                    buffer += '\0';
                     break;
                 default:
-                    error();
+                    error("unknown escape chatacter: " + current + " "); //printina 3 kartus
                     break;
             }
         }
 
-
-        public void print()
+        public void numHandle()
         {
-            Console.WriteLine("{0,4} | {1,4} | {2,10} | {3,10}", id, line, state, buffer);
+            switch (current)
+            {
+                case char num when Char.IsDigit(num) == true:
+                    buffer += current;
+                    //Console.WriteLine(buffer);
+                    break;
+                case '.':
+                    state = States.FLOAT;
+                    buffer += current;
+                    break;
+                case 'e':
+                    state = States._EXPONENT;
+                    buffer += current;
+                    break;
+                case char ch when Char.IsLetter(ch) == true:
+                    state = States.START;
+                    error("integer is merged with identifier");
+                    break;
+                default:
+                    tokens.Add(new Token(TokenType.INT, buffer, line));
+                    offset--;
+                    buffer = "";
+                    state = States.START;
+                    break;
+            }
         }
-        public void error()
+
+        public void floatHandle()
+        {
+            switch (current)
+            {
+                case char num when Char.IsDigit(num) == true:
+                    buffer += current;
+                    break;
+                case 'e':
+                    state = States._EXPONENT;
+                    buffer += current;
+                    break;
+                default:
+                    tokens.Add(new Token(TokenType.FLOAT, buffer, line));
+                    offset--;
+                    buffer = "";
+                    state = States.START;
+                    break;
+            }
+        }
+
+        public void exponentHandle()
+        {
+            switch (current)
+            {
+                case char num when Char.IsDigit(num) == true:
+                    state = States._EXP_END;
+                    buffer += current;
+                    break;
+                case '-':
+                    state = States._NEG_EXPONENT;
+                    buffer += current;
+                    break;
+                default:
+                    error("exponent is not complete "); // printina 3 kartus
+                    break;
+            }
+        }
+        public void exponentEndHandle()
+        {
+            switch (current)
+            {
+                case char num when Char.IsDigit(num) == true:
+                    buffer += current;
+                    break;
+                default:
+                    tokens.Add(new Token(TokenType.FLOAT, buffer, line));
+                    offset--;
+                    buffer = "";
+                    state = States.START;
+                    break;
+            }
+        }
+
+        public void negExponentHandle()
+        {
+            switch (current)
+            {
+                case char num when Char.IsDigit(num) == true:
+                    state = States._EXP_END;
+                    buffer += current;
+                    break;
+                default:
+                    error("exponent is not complete "); // printina 3 kartus
+                    break;
+            }
+        }
+
+        public void remainderHandle()
+        {
+            switch (current)
+            {
+                case char num when Char.IsDigit(num) == true:
+                    state = States.FLOAT;
+                    buffer += current;
+                    break;
+                case 'e':
+                    state = States._EXPONENT;
+                    buffer += current;
+                    break;
+                default:
+                    error("float remainder is merged with identifier"); //prints 3 times
+                    break;
+            }
+        }
+
+        public void identHandle()
+        {
+            switch (current)
+            {
+                case char ch when Char.IsLetter(ch) == true:
+                    buffer += current;
+                    break;
+                case char num when Char.IsDigit(num) == true:
+                    buffer += current;
+                    break;
+                case '_':
+                    buffer += current;
+                    break;
+                default:
+                    //print();
+                    //id++;
+                    offset--;
+                    //buffer = "";
+                    //state = States.START;
+                    state = States._KEYWORD;
+                    break;
+            }
+        }
+
+        public void keywordHandle()
+        {
+            switch (buffer)
+            {
+                case "true":
+                    tokens.Add(new Token(TokenType.BOOL, buffer, line));
+                    offset--;
+                    buffer = "";
+                    state = States.START;
+                    break;
+                case "false":
+                    tokens.Add(new Token(TokenType.BOOL, buffer, line));
+                    offset--;
+                    buffer = "";
+                    state = States.START;
+                    break;
+                case "int":
+                    tokens.Add(new Token(TokenType.KW_INT, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "float":
+                    tokens.Add(new Token(TokenType.KW_FLOAT, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "char":
+                    tokens.Add(new Token(TokenType.KW_CHAR, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "string":
+                    tokens.Add(new Token(TokenType.KW_STRING, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "bool":
+                    tokens.Add(new Token(TokenType.KW_BOOL, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "void":
+                    tokens.Add(new Token(TokenType.KW_VOID, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "if":
+                    tokens.Add(new Token(TokenType.KW_IF, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "elseif":
+                    tokens.Add(new Token(TokenType.KW_ELSEIF, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "else":
+                    tokens.Add(new Token(TokenType.KW_ELSE, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "return":
+                    tokens.Add(new Token(TokenType.KW_RETURN, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "break":
+                    tokens.Add(new Token(TokenType.KW_BREAK, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "continue":
+                    tokens.Add(new Token(TokenType.KW_CONTINUE, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                case "while":
+                    tokens.Add(new Token(TokenType.KW_WHILE, "", line));
+                    buffer = "";
+                    offset--;
+                    state = States.START;
+                    break;
+                default:
+                    //Console.WriteLine("default case of keyword");
+                    tokens.Add(new Token(TokenType.IDENT, buffer, line));
+                    offset--;
+                    buffer = "";
+                    state = States.START;
+                    break;
+            }
+
+        }
+
+        public void error(string message = "unexpected character", bool multiline = false)
         {
             err = true;
-            Console.WriteLine("ERROR: unexpected character at line {0}", line);
+            Console.WriteLine("ERROR in {0}: {1} at line {2}",fileName, message, multiline ? lineno :line);
+            state = States.ERROR;
         }
 
+        public void completeTokenWithBuffer(TokenType type, bool decrement = false)
+        {
+            tokens.Add(new Token(type, buffer, line));
+            buffer = "";
+            state = States.START;
+
+            if (decrement)
+            {
+                offset--;
+            }
+        }
+
+        public void completeToken(TokenType type, bool decrement = false)
+        {
+            buffer = "";
+            tokens.Add(new Token(type, buffer, line));
+            state = States.START;
+
+            if (decrement)
+            {
+                offset--;
+            }
+
+        }
     }
 
-    public enum Keywords
+    public class Token
     {
+        public TokenType Type { get; }
+        public dynamic Value { get; }
+        public int Line { get; }
 
+        public Token(TokenType type, string value, int line)
+        {
+            Type = type;
+            Value = value;
+            Line = line;
+        }
     }
 
-    public enum States
+    public enum TokenType
     {
-        START,
+        EOF,
 
         PLUS,
         MINUS,
@@ -516,12 +882,44 @@ namespace LanguageLexer
 
         CHAR,
         STRING,
+        INT,
+        FLOAT,
+        BOOL,
 
         PAREN_O,
         PAREN_C,
         BRACE_O,
         BRACE_C,
         SEMI_CLN,
+        CLN,
+
+        IDENT,
+
+        KW_INT,
+        KW_FLOAT,
+        KW_CHAR,
+        KW_STRING,
+        KW_BOOL,
+        KW_VOID,
+
+        KW_IF,
+        KW_ELSEIF,
+        KW_ELSE,
+
+        KW_RETURN,
+        KW_BREAK,
+        KW_CONTINUE,
+
+        KW_WHILE
+    }
+
+    public enum States
+    {
+        START,
+        ERROR,
+        EOF,
+
+        FLOAT,
 
         COMM,
         ML_COMM,
@@ -536,7 +934,15 @@ namespace LanguageLexer
         _COMM_END,
         _CHAR,
         _ESC_CH,
-        _CH_VAL,
-        _CH_END
+        _CH_END,
+        _STRING,
+        _ESC_STR,
+        _NUM,
+        _EXPONENT,
+        _NEG_EXPONENT,
+        _EXP_END,
+        _REMAINDER,
+        _IDENT,
+        _KEYWORD
     }
 }

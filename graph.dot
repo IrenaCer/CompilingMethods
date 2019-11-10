@@ -1,0 +1,165 @@
+digraph finite_state_machine {
+    rankdir=LR;
+    size="8,5"
+
+    node [shape = doublecircle]; START;
+    node [shape = point ]; qi;
+
+    node [shape = doublecircle ]; 
+    PLUS;
+    MINUS;
+    MULT;
+    REM;
+    POW;
+    PAREN_O;
+    PAREN_C;
+    BRACE_O;
+    BRACE_C;
+    SEMI_CLN;
+    CLN;
+    
+    NOT;
+    NOT_EQ;
+    
+    EQ_COMP;
+    EQ_ASSIGN;
+    
+    L_EQ;
+    L;
+    
+    G;
+    G_EQ;
+    
+    AND;
+    OR;
+    
+    DIV;
+    
+    COMM;
+    ML_COMM;
+    
+    CHAR;
+    STRING;
+    
+    INT;
+    FLOAT;
+    
+    node [shape = circle];
+    qi -> START;
+    
+    START  -> PLUS [ label = "+" ];
+    START  -> MINUS [ label = "-" ];
+    START  -> MULT [ label = "*" ];
+    START  -> REM [ label = "%" ];
+    START  -> POW [ label = "^" ];
+    START  -> PAREN_O [ label = "(" ];
+    START  -> PAREN_C [ label = ")" ];
+    START  -> BRACE_O [ label = "{" ];
+    START  -> BRACE_C [ label = "}" ];
+    START  -> SEMI_CLN [ label = ";" ];
+    START  -> CLN [ label = "," ];
+    
+    START -> _NOT [ label = "!" ];
+    
+    _NOT -> NOT [ label = "*"];
+    _NOT -> NOT_EQ [ label = "="];
+    
+    START -> _EQ [label = "="];
+    _EQ -> EQ_ASSIGN [label = "*"];
+    _EQ -> EQ_COMP [label = "="];
+    
+    START -> _L [label = ">"];
+    _L -> L [label = "*"];
+    _L -> L_EQ [label = "="];
+    
+    START -> _G [label = ">"];
+    _G -> G [label = "*"];
+    _G -> G_EQ [label = "="];
+    
+    START -> _AND [label = "&"];
+    _AND -> AND [label = "&"];
+    _AND -> ERROR [label = "*"];
+    
+    START -> _OR [label = "|"];
+    _OR -> OR [label = "|"];
+    _OR -> ERROR [label = "*"];
+    
+    START -> _SLASH [label = "/"];
+    _SLASH -> _COMM [label = "/"];
+        _COMM -> _COMM [label = "*"]
+        _COMM -> COMM [label = "\\n"];
+    _SLASH -> _ML_COMM [label = "'*'"];
+        _ML_COMM -> _ML_COMM [label = "*"];
+        _ML_COMM -> _COMM_END [label = "'*'"];
+            _COMM_END -> _ML_COMM [label = "*"];
+            _COMM_END -> ML_COMM [label = "/"];
+    _SLASH -> DIV [label = "*"];
+    
+    START -> _CHAR [label = "'"];
+    _CHAR -> _ESC_CH [label = "\\"];
+        _ESC_CH -> _CH_END [label = "n"];
+        _ESC_CH -> _CH_END [label = "b"];
+        _ESC_CH -> _CH_END [label = "r"];
+        _ESC_CH -> _CH_END [label = "t"];
+        _ESC_CH -> _CH_END [label = "\""];
+        _ESC_CH -> _CH_END [label = "'"];
+        _ESC_CH -> _CH_END [label = "\\"];
+        _ESC_CH -> _CH_END [label = "0"];
+        _ESC_CH -> ERROR [label = "*"];
+    _CHAR -> ERROR [label = "\\'"];
+    _CHAR -> ERROR [label = "\\\""];
+    _CHAR -> ERROR [label = "\\n"];
+    _CHAR -> ERROR [label = "\\b"];
+    _CHAR -> ERROR [label = "\\r"];
+    _CHAR -> ERROR [label = "\\t"];
+    _CHAR -> _CH_END [label = "*"];
+    _CH_END -> CHAR [label = "'"];
+    _CH_END -> ERROR [label = "*"];
+    
+    START -> _STRING [label = "'"];
+    _STRING -> _ESC_STR[label = "\\"];
+        _ESC_STR -> _STRING [label = "n"];
+        _ESC_STR -> _STRING [label = "b"];
+        _ESC_STR -> _STRING [label = "r"];
+        _ESC_STR -> _STRING [label = "t"];
+        _ESC_STR -> _STRING [label = "\""];
+        _ESC_STR -> _STRING [label = "'"];
+        _ESC_STR -> _STRING [label = "\\"];
+        _ESC_STR -> _STRING [label = "0"];
+        _ESC_STR -> ERROR [label = "*"];
+    _STRING -> _STRING [label = "*"]
+    _STRING -> STRING [label = "\""];
+    
+    START -> _NUM [label = "0-9"];
+    _NUM -> _NUM [label = "0-9"];
+    _NUM -> INT [label = "*"];
+    _NUM -> _FLOAT [label = "."];
+        _FLOAT -> FLOAT [label = "*"];
+        _FLOAT -> _FLOAT [label = "0-9"];
+        _FLOAT -> _EXPONENT [label = "e"];
+    _NUM -> _EXPONENT [label = "e"];
+        _EXPONENT -> ERROR [label = "*"];
+        _EXPONENT -> _EXP_END [label = "0-9"];
+            _EXP_END -> _EXP_END [label = "0-9"];
+        _EXPONENT -> _NEG_EXPONENT [label = "-"];
+            _NEG_EXPONENT -> _EXP_END [label = "0-9"];
+            _NEG_EXPONENT -> ERROR [label = "*"];
+        _EXPONENT -> ERROR [label = "*"];
+    _NUM -> ERROR [label = "a-z"];
+    _NUM -> ERROR [label = "A-Z"];
+    
+    START -> _REMAINDER [label = "."];
+    _REMAINDER -> _FLOAT [label = "0-9"];
+    _REMAINDER -> _EXPONENT [label = "e"];
+    _REMAINDER -> ERROR [label = "*"];
+
+    START -> _IDENT [label = "a-z"];
+    START -> _IDENT [label = "A_Z"];
+    START -> _IDENT [label = "_"];
+    _IDENT -> _IDENT [label = "a-z"];
+    _IDENT -> _IDENT [label = "A_Z"];
+    _IDENT -> _IDENT [label = "0-9"];
+    _IDENT -> _IDENT [label = "_"];
+    _IDENT -> _KEYWORD [label = "*"];
+
+}
