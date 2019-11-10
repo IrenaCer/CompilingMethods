@@ -27,24 +27,16 @@ namespace LanguageLexer
         {
             while (state != States.ERROR && offset < input.Length)
             {
-                //Console.WriteLine("Im here");
                 current = input[offset];
-
-                //Console.WriteLine("{0}, {1}", current, state);
 
                 analyse();
                 offset++;
             }
             current = ' ';
-            //Console.WriteLine("Last analysing");
-            analyse();
-            analyse();
-            //Console.WriteLine(Char.IsLetter(' '));
 
-            //Console.WriteLine("current:");
-            //Console.WriteLine(current);
-            //current = ' ';
-            //Console.WriteLine(state);
+            analyse();
+            analyse();
+
             if (!err)
             {
                 if (state == States.START || state == States.COMM)
@@ -72,14 +64,6 @@ namespace LanguageLexer
                     error("Unterminated multiline comment", true);
                 }
             }
-
-
-
-            //if (state == States.START)
-            //{
-            //    state = States.EOF;
-            //    print();
-            //}
         }
 
         public void analyse()
@@ -168,49 +152,37 @@ namespace LanguageLexer
             switch (current)
             {
                 case '+':
-                    //completeToken(TokenType.PLUS);
-                    tokens.Add(new Token(TokenType.PLUS, "", line));
-                    state = States.START;
+                    completeToken(TokenType.PLUS);
                     break;
                 case '-':
-                    tokens.Add(new Token(TokenType.MINUS, "", line));
-                    state = States.START;
+                    completeToken(TokenType.MINUS);
                     break;
                 case '*':
-                    tokens.Add(new Token(TokenType.MULT, "", line));
-                    state = States.START;
+                    completeToken(TokenType.MULT);
                     break;
                 case '%':
-                    tokens.Add(new Token(TokenType.REM, "", line));
-                    state = States.START;
+                    completeToken(TokenType.REM);
                     break;
                 case '^':
-                    tokens.Add(new Token(TokenType.POW, "", line));
-                    state = States.START;
+                    completeToken(TokenType.POW);
                     break;
                 case '(':
-                    tokens.Add(new Token(TokenType.PAREN_O, "", line));
-                    state = States.START;
+                    completeToken(TokenType.PAREN_O);
                     break;
                 case ')':
-                    tokens.Add(new Token(TokenType.PAREN_C, "", line));
-                    state = States.START;
+                    completeToken(TokenType.PAREN_C);
                     break;
                 case '{':
-                    tokens.Add(new Token(TokenType.BRACE_O, "", line));
-                    state = States.START;
+                    completeToken(TokenType.BRACE_O);
                     break;
                 case '}':
-                    tokens.Add(new Token(TokenType.BRACE_C, "", line));
-                    state = States.START;
+                    completeToken(TokenType.BRACE_C);
                     break;
                 case ';':
-                    tokens.Add(new Token(TokenType.SEMI_CLN, "", line));
-                    state = States.START;
+                    completeToken(TokenType.SEMI_CLN);
                     break;
                 case ',':
-                    tokens.Add(new Token(TokenType.CLN, "", line));
-                    state = States.START;
+                    completeToken(TokenType.CLN);
                     break;
                 case '!':
                     state = States._NOT;
@@ -251,14 +223,12 @@ namespace LanguageLexer
                     state = States._REMAINDER;
                     buffer += current;
                     break;
-
                 case char ch when Char.IsLetter(ch) == true || ch == '_':
                     state = States._IDENT;
                     buffer += current;
                     break;
                 default:
-                    state = States.START;
-
+                    error("unknown character");
                     break;
             }
         }
@@ -268,13 +238,10 @@ namespace LanguageLexer
             switch (current)
             {
                 case '=':
-                    tokens.Add(new Token(TokenType.NOT_EQ, "", line));
-                    state = States.START;
+                    completeToken(TokenType.NOT_EQ);
                     break;
                 default:
-                    tokens.Add(new Token(TokenType.NOT, "", line));
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.NOT, true);
                     break;
             }
         }
@@ -284,13 +251,10 @@ namespace LanguageLexer
             switch (current)
             {
                 case '=':
-                    tokens.Add(new Token(TokenType.EQ_COMP, "", line));
-                    state = States.START;
+                    completeToken(TokenType.EQ_COMP);
                     break;
                 default:
-                    tokens.Add(new Token(TokenType.EQ_ASGN, "", line));
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.EQ_ASGN, true);
                     break;
             }
         }
@@ -300,13 +264,10 @@ namespace LanguageLexer
             switch (current)
             {
                 case '=':
-                    tokens.Add(new Token(TokenType.L_EQ, "", line));
-                    state = States.START;
+                    completeToken(TokenType.L_EQ);
                     break;
                 default:
-                    tokens.Add(new Token(TokenType.L, "", line));
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.L, true);
                     break;
             }
         }
@@ -316,13 +277,10 @@ namespace LanguageLexer
             switch (current)
             {
                 case '=':
-                    tokens.Add(new Token(TokenType.G_EQ, "", line));
-                    state = States.START;
+                    completeToken(TokenType.G_EQ);
                     break;
                 default:
-                    tokens.Add(new Token(TokenType.G, "", line));
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.G, true);
                     break;
             }
         }
@@ -331,11 +289,10 @@ namespace LanguageLexer
             switch (current)
             {
                 case '&':
-                    tokens.Add(new Token(TokenType.AND, "", line));
-                    state = States.START;
+                    completeToken(TokenType.AND);
                     break;
                 default:
-                    error("Incomplete && operator"); //prints 2-3 times
+                    error("Incomplete && operator");
                     break;
             }
         }
@@ -348,7 +305,7 @@ namespace LanguageLexer
                     state = States.START;
                     break;
                 default:
-                    error("Incomplete || operator"); //prints 2-3
+                    error("Incomplete || operator");
                     break;
             }
         }
@@ -365,9 +322,7 @@ namespace LanguageLexer
                     state = States.ML_COMM;
                     break;
                 default:
-                    tokens.Add(new Token(TokenType.DIV, "", line));
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.DIV, true);
                     break;
             }
         }
@@ -447,35 +402,35 @@ namespace LanguageLexer
             {
                 case 'n':
                     state = States._CH_END;
-                    buffer += current;
+                    buffer = "\n";
                     break;
                 case 'b':
                     state = States._CH_END;
-                    buffer += current;
+                    buffer = "\b";
                     break;
                 case 'r':
                     state = States._CH_END;
-                    buffer += current;
+                    buffer = "\r";
                     break;
                 case 't':
                     state = States._CH_END;
-                    buffer += current;
+                    buffer = "\t";
                     break;
                 case '"':
                     state = States._CH_END;
-                    buffer += current;
+                    buffer = "\"";
                     break;
                 case '\'':
                     state = States._CH_END;
-                    buffer += current;
+                    buffer = "\'";
                     break;
                 case '\\':
                     state = States._CH_END;
-                    buffer += current;
+                    buffer = "\\";
                     break;
                 case '0':
                     state = States._CH_END;
-                    buffer += current;
+                    buffer = "\0";
                     break;
                 default:
                     error();
@@ -488,9 +443,7 @@ namespace LanguageLexer
             switch (current)
             {
                 case '\'':
-                    tokens.Add(new Token(TokenType.CHAR, buffer, line));
-                    buffer = "";
-                    state = States.START;
+                    completeTokenWithBuffer(TokenType.CHAR, buffer[0]);
                     break;
                 default:
                     error("Length of char can only be one character use \" \" for string");
@@ -574,7 +527,6 @@ namespace LanguageLexer
             {
                 case char num when Char.IsDigit(num) == true:
                     buffer += current;
-                    //Console.WriteLine(buffer);
                     break;
                 case '.':
                     state = States.FLOAT;
@@ -589,10 +541,7 @@ namespace LanguageLexer
                     error("integer is merged with identifier");
                     break;
                 default:
-                    tokens.Add(new Token(TokenType.INT, buffer, line));
-                    offset--;
-                    buffer = "";
-                    state = States.START;
+                    completeTokenWithBuffer(TokenType.INT, Int32.Parse(buffer), true);
                     break;
             }
         }
@@ -609,10 +558,7 @@ namespace LanguageLexer
                     buffer += current;
                     break;
                 default:
-                    tokens.Add(new Token(TokenType.FLOAT, buffer, line));
-                    offset--;
-                    buffer = "";
-                    state = States.START;
+                    completeTokenWithBuffer(TokenType.FLOAT, float.Parse(buffer), true);
                     break;
             }
         }
@@ -642,10 +588,7 @@ namespace LanguageLexer
                     buffer += current;
                     break;
                 default:
-                    tokens.Add(new Token(TokenType.FLOAT, buffer, line));
-                    offset--;
-                    buffer = "";
-                    state = States.START;
+                    completeTokenWithBuffer(TokenType.FLOAT, float.Parse(buffer), true);
                     break;
             }
         }
@@ -696,11 +639,7 @@ namespace LanguageLexer
                     buffer += current;
                     break;
                 default:
-                    //print();
-                    //id++;
                     offset--;
-                    //buffer = "";
-                    //state = States.START;
                     state = States._KEYWORD;
                     break;
             }
@@ -711,104 +650,54 @@ namespace LanguageLexer
             switch (buffer)
             {
                 case "true":
-                    tokens.Add(new Token(TokenType.BOOL, buffer, line));
-                    offset--;
-                    buffer = "";
-                    state = States.START;
+                    completeTokenWithBuffer(TokenType.BOOL, bool.Parse(buffer), true);
                     break;
                 case "false":
-                    tokens.Add(new Token(TokenType.BOOL, buffer, line));
-                    offset--;
-                    buffer = "";
-                    state = States.START;
+                    completeTokenWithBuffer(TokenType.BOOL, bool.Parse(buffer), true);
                     break;
                 case "int":
-                    tokens.Add(new Token(TokenType.KW_INT, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_INT, true);
                     break;
                 case "float":
-                    tokens.Add(new Token(TokenType.KW_FLOAT, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_FLOAT, true);
                     break;
                 case "char":
-                    tokens.Add(new Token(TokenType.KW_CHAR, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_CHAR, true);
                     break;
                 case "string":
-                    tokens.Add(new Token(TokenType.KW_STRING, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_STRING, true);
                     break;
                 case "bool":
-                    tokens.Add(new Token(TokenType.KW_BOOL, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_BOOL, true);
                     break;
                 case "void":
-                    tokens.Add(new Token(TokenType.KW_VOID, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_VOID, true);
                     break;
                 case "if":
-                    tokens.Add(new Token(TokenType.KW_IF, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_IF, true);
                     break;
                 case "elseif":
-                    tokens.Add(new Token(TokenType.KW_ELSEIF, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_ELSEIF, true);
                     break;
                 case "else":
-                    tokens.Add(new Token(TokenType.KW_ELSE, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_ELSE, true);
                     break;
                 case "return":
-                    tokens.Add(new Token(TokenType.KW_RETURN, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_RETURN, true);
                     break;
                 case "break":
-                    tokens.Add(new Token(TokenType.KW_BREAK, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_BREAK, true);
                     break;
                 case "continue":
-                    tokens.Add(new Token(TokenType.KW_CONTINUE, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_CONTINUE, true);
                     break;
                 case "while":
-                    tokens.Add(new Token(TokenType.KW_WHILE, "", line));
-                    buffer = "";
-                    offset--;
-                    state = States.START;
+                    completeToken(TokenType.KW_WHILE, true);
                     break;
                 default:
-                    //Console.WriteLine("default case of keyword");
-                    tokens.Add(new Token(TokenType.IDENT, buffer, line));
-                    offset--;
-                    buffer = "";
-                    state = States.START;
+                    completeTokenWithBuffer(TokenType.IDENT, buffer, true);
                     break;
             }
-
         }
 
         public void error(string message = "unexpected character", bool multiline = false)
@@ -818,9 +707,9 @@ namespace LanguageLexer
             state = States.ERROR;
         }
 
-        public void completeTokenWithBuffer(TokenType type, bool decrement = false)
+        public void completeTokenWithBuffer(TokenType type, dynamic value, bool decrement = false)
         {
-            tokens.Add(new Token(type, buffer, line));
+            tokens.Add(new Token(type, value, line));
             buffer = "";
             state = States.START;
 
@@ -840,7 +729,6 @@ namespace LanguageLexer
             {
                 offset--;
             }
-
         }
     }
 
@@ -850,7 +738,7 @@ namespace LanguageLexer
         public dynamic Value { get; }
         public int Line { get; }
 
-        public Token(TokenType type, string value, int line)
+        public Token(TokenType type, dynamic value, int line)
         {
             Type = type;
             Value = value;

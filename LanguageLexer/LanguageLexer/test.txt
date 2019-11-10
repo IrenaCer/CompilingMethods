@@ -2,3 +2,6 @@ bac
 /*asd
 asda
 */k
+abc123
+'\"'
+a
